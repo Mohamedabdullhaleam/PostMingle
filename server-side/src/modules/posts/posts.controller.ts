@@ -36,7 +36,7 @@ export class PostsController {
     const data = await this.postsService.update(id, updatePostDto);
     return new ResponseDto('Post updated successfully', data);
   }
-  @Delete('id')
+  @Delete(':id')
   async delete(@Param('id') id: string) {
     console.log('[Post--Controller]', id);
     const data = await this.postsService.delete(id);

@@ -52,6 +52,9 @@ export class PostsService {
 
   async delete(id: string): Promise<string> {
     validateId(id);
+    console.log('[Post--Service]', id);
+    console.log('[Post--Service]  I am here ');
+
     const result = await this.postModel
       .findByIdAndDelete(id, { lean: true })
       .exec();
