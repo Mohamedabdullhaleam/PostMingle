@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument } from './post.schema';
@@ -12,6 +13,7 @@ import { validateId } from 'src/common/utils/validate-id.util';
 
 @Injectable()
 export class PostsService {
+  private readonly logger = new Logger(PostsService.name);
   constructor(
     @InjectModel(Post.name) private readonly postModel: Model<PostDocument>,
   ) {}
@@ -52,15 +54,13 @@ export class PostsService {
 
   async delete(id: string): Promise<string> {
     validateId(id);
-    console.log('[Post--Service]', id);
-    console.log('[Post--Service]  I am here ');
-
-    const result = await this.postModel
-      .findByIdAndDelete(id, { lean: true })
-      .exec();
+    this.logger.log(`Deleting post with ID: ${id}`);
+    const result = await this.postModel.findByIdAndDelete(id).lean().exec();
     if (!result) {
+      this.logger.warn(`Post with ID ${id} not found`);
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
+    this.logger.debug(`Post with ID ${id} deleted successfully`);
     return `Post with ID ${id} deleted successfully ✔`;
   }
 

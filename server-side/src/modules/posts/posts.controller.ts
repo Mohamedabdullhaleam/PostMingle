@@ -3,18 +3,20 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   Patch,
   Post,
+  Logger,
 } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { ResponseDto } from 'src/common/reponse.dto';
 import { PostsService } from './posts.service';
-import { Post as PostEntity } from './post.schema';
 import { UpdatePostDto } from './dto/update-post.dto';
 
 @Controller('posts')
 export class PostsController {
+  private readonly logger = new Logger(PostsController.name);
   constructor(private readonly postsService: PostsService) {}
   @Post()
   async create(@Body() createPostDto: CreatePostDto) {
@@ -38,7 +40,7 @@ export class PostsController {
   }
   @Delete(':id')
   async delete(@Param('id') id: string) {
-    console.log('[Post--Controller]', id);
+    this.logger.log(`Received request to delete post with ID: "${id}"`);
     const data = await this.postsService.delete(id);
     return new ResponseDto('Post deleted successfully', data);
   }
