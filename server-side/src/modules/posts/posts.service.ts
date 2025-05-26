@@ -27,7 +27,7 @@ export class PostsService {
 
   async findOne(id: string): Promise<Post> {
     validateId(id);
-    const post = await this.postModel.findById(id).exec();
+    const post = await this.postModel.findById(id).lean().exec();
     if (!post) {
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
@@ -52,7 +52,9 @@ export class PostsService {
 
   async delete(id: string): Promise<string> {
     validateId(id);
-    const result = await this.postModel.findByIdAndDelete(id).exec();
+    const result = await this.postModel
+      .findByIdAndDelete(id, { lean: true })
+      .exec();
     if (!result) {
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
