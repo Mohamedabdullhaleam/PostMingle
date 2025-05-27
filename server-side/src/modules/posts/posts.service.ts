@@ -18,13 +18,21 @@ export class PostsService {
     @InjectModel(Post.name) private readonly postModel: Model<PostDocument>,
   ) {}
 
-  async create(createPostDto: CreatePostDto): Promise<Post> {
-    const createdPost = new this.postModel(createPostDto);
+  async create(createPostDto: CreatePostDto, userId: string): Promise<Post> {
+    const createdPost = new this.postModel({
+      ...createPostDto,
+      user: userId,
+    });
     return createdPost.save();
   }
 
   async findAll(): Promise<Post[]> {
-    return this.postModel.find().sort({ createdAt: -1 }).lean().exec();
+    return this.postModel
+      .find()
+      .populate('user', 'username email')
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
   }
 
   async findOne(id: string): Promise<Post> {
