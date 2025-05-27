@@ -40,15 +40,21 @@ export class PostsController {
   }
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
-  async update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
-    const data = await this.postsService.update(id, updatePostDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updatePostDto: UpdatePostDto,
+    @Request() req,
+  ) {
+    const userId = req.user._id;
+    const data = await this.postsService.update(id, updatePostDto, userId);
     return new ResponseDto('Post updated successfully', data);
   }
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id') id: string, @Request() req) {
+    const userId = req.user._id;
     this.logger.log(`Received request to delete post with ID: "${id}"`);
-    const data = await this.postsService.delete(id);
+    const data = await this.postsService.delete(id, userId);
     return new ResponseDto('Post deleted successfully', data);
   }
 }
