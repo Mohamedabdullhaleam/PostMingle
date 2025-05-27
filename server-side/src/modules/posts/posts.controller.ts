@@ -3,12 +3,12 @@ import {
   Controller,
   Delete,
   Get,
-  HttpCode,
   Param,
   Patch,
   Post,
   Logger,
   Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { ResponseDto } from 'src/common/reponse.dto';
@@ -24,20 +24,28 @@ export class PostsController {
   @Post()
   @UseGuards(AuthGuard('jwt'))
   async create(@Body() createPostDto: CreatePostDto, @Request() req) {
-    const userId = req.user._id;
+    const userId = req.user.userId;
+    console.log('UserId', userId);
+
+    if (!userId) {
+      throw new ForbiddenException('User not authenticated');
+    }
     const data = await this.postsService.create(createPostDto, userId);
     return new ResponseDto('Post created successfully', data);
   }
+
   @Get()
   async findAll() {
     const data = await this.postsService.findAll();
     return new ResponseDto('Here is your posts', data);
   }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const data = await this.postsService.findOne(id);
     return new ResponseDto('Here is your post', data);
   }
+
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
   async update(
@@ -45,14 +53,15 @@ export class PostsController {
     @Body() updatePostDto: UpdatePostDto,
     @Request() req,
   ) {
-    const userId = req.user._id;
+    const userId = req.user.userId;
+    console.log('aaaaaaa', userId);
     const data = await this.postsService.update(id, updatePostDto, userId);
     return new ResponseDto('Post updated successfully', data);
   }
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
   async delete(@Param('id') id: string, @Request() req) {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     this.logger.log(`Received request to delete post with ID: "${id}"`);
     const data = await this.postsService.delete(id, userId);
     return new ResponseDto('Post deleted successfully', data);

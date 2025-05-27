@@ -7,6 +7,9 @@ export type PostDocument = Post & Document;
 
 @Schema({ timestamps: true })
 export class Post {
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
+  user: mongoose.Types.ObjectId;
+
   @Prop({ required: true })
   title: string;
 
@@ -15,9 +18,6 @@ export class Post {
 
   @Prop({ required: false })
   image?: string;
-
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
-  user: User;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

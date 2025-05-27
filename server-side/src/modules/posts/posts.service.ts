@@ -21,8 +21,8 @@ export class PostsService {
 
   async create(createPostDto: CreatePostDto, userId: string): Promise<Post> {
     const createdPost = new this.postModel({
-      ...createPostDto,
       user: userId,
+      ...createPostDto,
     });
     return createdPost.save();
   }
@@ -30,7 +30,7 @@ export class PostsService {
   async findAll(): Promise<Post[]> {
     return this.postModel
       .find()
-      .populate('user', 'username email')
+      .populate('user', '_id')
       .sort({ createdAt: -1 })
       .lean()
       .exec();
@@ -70,7 +70,11 @@ export class PostsService {
     validateId(id);
     await this.checkOwnership(id, userId);
     this.logger.log(`Deleting post with ID: ${id}`);
-    const result = await this.postModel.findByIdAndDelete(id).lean().exec();
+
+    const result = await this.postModel
+      .findByIdAndUpdate(id, { deleted: true })
+      .lean()
+      .exec();
     if (!result) {
       this.logger.warn(`Post with ID ${id} not found`);
       throw new NotFoundException(`Post with ID ${id} not found`);
@@ -82,11 +86,20 @@ export class PostsService {
   async count(): Promise<number> {
     return this.postModel.countDocuments();
   }
-  async checkOwnership(postId: string, userId: string): Promise<Post> {
+  async checkOwnership(postId: string, userId: string): Promise<PostDocument> {
     const post = await this.postModel.findById(postId).exec();
+    console.log('OwnerShip', post);
+
     if (!post) {
       throw new NotFoundException(`Post with ID ${postId} not found`);
     }
+
+    if (!post.user) {
+      throw new ForbiddenException(
+        `Post with ID ${postId} has no user assigned`,
+      );
+    }
+    console.log('Ownership', post.user.toString(), userId);
     if (post.user.toString() !== userId) {
       throw new ForbiddenException(
         'You are not authorized to modify this post',
