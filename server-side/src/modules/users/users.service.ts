@@ -13,9 +13,11 @@ import { validateId } from 'src/common/utils/validate-id.util';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<Partial<UserDocument>>,
+  ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto): Promise<Partial<UserDocument>> {
     const { username, email, password } = createUserDto;
 
     const existingUser = await this.userModel.findOne({ email }).lean().exec();
@@ -28,19 +30,22 @@ export class UsersService {
       email,
       password: hashedPassword,
     });
-    return newUser.save();
+    newUser.save();
+    const { _id } = newUser;
+    return { _id, username, email };
   }
 
-  async findById(id: string): Promise<User> {
+  async findById(id: string): Promise<Partial<UserDocument>> {
     validateId(id);
     const user = await this.userModel.findById(id).lean().exec();
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
-    return user;
+    const { _id, username, email } = user;
+    return { _id, username, email };
   }
 
-  async findByemail(email: string): Promise<User> {
+  async findByemail(email: string): Promise<Partial<UserDocument>> {
     const user = await this.userModel.findOne({ email }).lean().exec();
     if (!user) {
       throw new NotFoundException(`User with email ${email} not found`);

@@ -23,7 +23,8 @@ export class UsersController {
   }
 
   @Get(':id')
-  findAll(@Param('id') id: string) {
-    return this.usersService.findById(id);
+  async findOne(@Param('id') id: string) {
+    const user = await this.usersService.findById(id);
+    return new ResponseDto('User data', user);
   }
 }
