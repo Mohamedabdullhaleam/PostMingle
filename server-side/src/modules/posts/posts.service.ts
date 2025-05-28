@@ -29,7 +29,7 @@ export class PostsService {
 
   async findAll(): Promise<Post[]> {
     return this.postModel
-      .find()
+      .find({ deleted: { $ne: true } })
       .populate('user', '_id')
       .sort({ createdAt: -1 })
       .lean()
@@ -38,7 +38,10 @@ export class PostsService {
 
   async findOne(id: string): Promise<Post> {
     validateId(id);
-    const post = await this.postModel.findById(id).lean().exec();
+    const post = await this.postModel
+      .findOne({ _id: id, deleted: false })
+      .lean()
+      .exec();
     if (!post) {
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
@@ -72,7 +75,11 @@ export class PostsService {
     this.logger.log(`Deleting post with ID: ${id}`);
 
     const result = await this.postModel
-      .findByIdAndUpdate(id, { deleted: true })
+      .findOneAndUpdate(
+        { _id: id, deleted: false },
+        { deleted: true },
+        { new: true },
+      )
       .lean()
       .exec();
     if (!result) {

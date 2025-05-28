@@ -18,6 +18,9 @@ export class Post {
 
   @Prop({ required: false })
   image?: string;
+
+  @Prop({ default: false })
+  deleted: boolean;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
