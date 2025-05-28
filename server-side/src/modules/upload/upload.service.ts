@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
+import { lookup } from 'mime-types';
 
 @Injectable()
 export class UploadService {
@@ -20,16 +21,19 @@ export class UploadService {
     });
 
     this.bucket = this.configService.getOrThrow('AWS_S3_BUCKET');
-    this.endpoint = this.configService.getOrThrow('AWS_S3_PUBLIC_URL'); // We'll add this in .env
+    this.endpoint = this.configService.getOrThrow('AWS_S3_PUBLIC_URL');
   }
 
   async upload(fileName: string, file: Buffer) {
-    // Upload the file
+    const contentType = lookup(fileName) || 'application/octet-stream';
+
     await this.s3Client.send(
       new PutObjectCommand({
         Bucket: this.bucket,
         Key: fileName,
         Body: file,
+        ContentType: contentType,
+        ACL: 'public-read',
       }),
     );
 
