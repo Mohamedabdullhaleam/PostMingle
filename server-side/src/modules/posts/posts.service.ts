@@ -54,7 +54,6 @@ export class PostsService {
       .populate('user', '_id username email')
       .populate('likes', 'username email')
       .populate('comments.user', 'username email')
-      .lean()
       .exec();
 
     if (!post) {

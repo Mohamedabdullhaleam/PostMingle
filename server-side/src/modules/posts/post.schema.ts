@@ -1,4 +1,4 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory, Virtual } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import * as mongoose from 'mongoose';
 import { User } from '../users/user.schema';
@@ -44,6 +44,15 @@ export class Post {
     content: string;
     createdAt: Date;
   }>;
+
+  @Virtual({
+    get: function (this: Post) {
+      return this.likes?.length || 0;
+    },
+  })
+  likeCount: number;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
+PostSchema.set('toObject', { virtuals: true });
+PostSchema.set('toJSON', { virtuals: true });
