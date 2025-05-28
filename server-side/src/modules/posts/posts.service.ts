@@ -7,10 +7,11 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument } from './post.schema';
-import { isValidObjectId, Model } from 'mongoose';
+import mongoose, { isValidObjectId, Model } from 'mongoose';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { validateId } from 'src/common/utils/validate-id.util';
+import { CreateCommentDto } from './dto/create-comment.dto';
 
 @Injectable()
 export class PostsService {
@@ -27,21 +28,35 @@ export class PostsService {
     return createdPost.save();
   }
 
+  // async findAll(): Promise<Post[]> {
+  //   return this.postModel
+  //     .find({ deleted: { $ne: true } })
+  //     .populate('user', '_id')
+  //     .sort({ createdAt: -1 })
+  //     .lean()
+  //     .exec();
+  // }
   async findAll(): Promise<Post[]> {
     return this.postModel
       .find({ deleted: { $ne: true } })
-      .populate('user', '_id')
+      .populate('user', '_id username email')
+      .populate('likes', 'username email')
       .sort({ createdAt: -1 })
       .lean()
       .exec();
   }
 
+  //
   async findOne(id: string): Promise<Post> {
     validateId(id);
     const post = await this.postModel
       .findOne({ _id: id, deleted: false })
+      .populate('user', '_id username email')
+      .populate('likes', 'username email')
+      .populate('comments.user', 'username email')
       .lean()
       .exec();
+
     if (!post) {
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
@@ -88,6 +103,55 @@ export class PostsService {
     }
     this.logger.debug(`Post with ID ${id} deleted successfully`);
     return `Post with ID ${id} deleted successfully ✔`;
+  }
+
+  // Comments and likes
+  async likePost(postId: string, userId: string): Promise<Post> {
+    validateId(postId);
+    validateId(userId);
+
+    const post = await this.postModel.findById(postId);
+    if (!post) throw new NotFoundException('Post not found');
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const hasLiked = post.likes.some((likeId) => likeId.equals(userObjectId));
+
+    if (hasLiked) {
+      post.likes = post.likes.filter((likeId) => !likeId.equals(userObjectId));
+    } else {
+      post.likes.push(userObjectId);
+    }
+
+    return post
+      .save()
+      .then((savedPost) => savedPost.populate('likes', 'username email'));
+  }
+  async addComment(
+    postId: string,
+    userId: string,
+    createCommentDto: CreateCommentDto,
+  ): Promise<Post> {
+    validateId(postId);
+    validateId(userId);
+
+    const comment = {
+      user: new mongoose.Types.ObjectId(userId),
+      content: createCommentDto.content,
+      createdAt: new Date(),
+    };
+
+    const updatedPost = await this.postModel
+      .findByIdAndUpdate(
+        postId,
+        { $push: { comments: comment } },
+        { new: true, runValidators: true },
+      )
+      .populate('comments.user', 'username email');
+
+    if (!updatedPost) {
+      throw new NotFoundException(`Post with ID ${postId} not found`);
+    }
+    return updatedPost;
   }
 
   async count(): Promise<number> {

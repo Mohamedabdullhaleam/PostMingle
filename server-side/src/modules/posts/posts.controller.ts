@@ -16,6 +16,7 @@ import { PostsService } from './posts.service';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { CreateCommentDto } from './dto/create-comment.dto';
 @Controller('posts')
 export class PostsController {
   private readonly logger = new Logger(PostsController.name);
@@ -65,5 +66,32 @@ export class PostsController {
     this.logger.log(`Received request to delete post with ID: "${id}"`);
     const data = await this.postsService.delete(id, userId);
     return new ResponseDto('Post deleted successfully', data);
+  }
+
+  @Post(':id/like')
+  @UseGuards(AuthGuard('jwt'))
+  async toggleLike(@Param('id') postId: string, @Request() req) {
+    const data = await this.postsService.likePost(postId, req.user.userId);
+    return new ResponseDto(
+      data.likes.some((user) => user._id.toString() === req.user.userId)
+        ? 'Post liked successfully'
+        : 'Post unliked successfully',
+      data,
+    );
+  }
+
+  @Post(':id/comments')
+  @UseGuards(AuthGuard('jwt'))
+  async addComment(
+    @Param('id') postId: string,
+    @Body() createCommentDto: CreateCommentDto,
+    @Request() req,
+  ) {
+    const data = await this.postsService.addComment(
+      postId,
+      req.user.userId,
+      createCommentDto,
+    );
+    return new ResponseDto('Comment added successfully', data);
   }
 }

@@ -21,6 +21,29 @@ export class Post {
 
   @Prop({ default: false })
   deleted: boolean;
+
+  @Prop({
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    default: [],
+  })
+  likes: mongoose.Types.ObjectId[];
+
+  @Prop([
+    {
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+      },
+      content: { type: String, required: true },
+      createdAt: { type: Date, default: Date.now },
+    },
+  ])
+  comments: Array<{
+    user: mongoose.Types.ObjectId;
+    content: string;
+    createdAt: Date;
+  }>;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
