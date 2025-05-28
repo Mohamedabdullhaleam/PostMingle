@@ -9,6 +9,7 @@ import {
   Logger,
   Request,
   ForbiddenException,
+  Query,
 } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { ResponseDto } from 'src/common/reponse.dto';
@@ -93,5 +94,14 @@ export class PostsController {
       createCommentDto,
     );
     return new ResponseDto('Comment added successfully', data);
+  }
+  @Get(':id/comments')
+  async getComments(
+    @Param('id') postId: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
+    const data = await this.postsService.getComments(postId, +page, +limit);
+    return new ResponseDto('Comments fetched successfully', data);
   }
 }
