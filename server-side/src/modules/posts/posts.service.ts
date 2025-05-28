@@ -28,14 +28,6 @@ export class PostsService {
     return createdPost.save();
   }
 
-  // async findAll(): Promise<Post[]> {
-  //   return this.postModel
-  //     .find({ deleted: { $ne: true } })
-  //     .populate('user', '_id')
-  //     .sort({ createdAt: -1 })
-  //     .lean()
-  //     .exec();
-  // }
   async findAll(): Promise<Post[]> {
     return this.postModel
       .find({ deleted: { $ne: true } })
@@ -46,7 +38,6 @@ export class PostsService {
       .exec();
   }
 
-  //
   async findOne(id: string): Promise<Post> {
     validateId(id);
     const post = await this.postModel
@@ -104,7 +95,6 @@ export class PostsService {
     return `Post with ID ${id} deleted successfully ✔`;
   }
 
-  // Comments and likes
   async likePost(postId: string, userId: string): Promise<Post> {
     validateId(postId);
     validateId(userId);
@@ -125,6 +115,7 @@ export class PostsService {
       .save()
       .then((savedPost) => savedPost.populate('likes', 'username email'));
   }
+
   async addComment(
     postId: string,
     userId: string,
@@ -152,6 +143,7 @@ export class PostsService {
     }
     return updatedPost;
   }
+
   async getComments(postId: string, page: number, limit: number) {
     validateId(postId);
     const post = await this.postModel
@@ -169,6 +161,7 @@ export class PostsService {
   async count(): Promise<number> {
     return this.postModel.countDocuments();
   }
+
   async checkOwnership(postId: string, userId: string): Promise<PostDocument> {
     const post = await this.postModel.findById(postId).exec();
     console.log('OwnerShip', post);
