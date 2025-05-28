@@ -8,6 +8,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { PostsModule } from './modules/posts/posts.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AuthModule } from './modules/auth/auth.module';
     PostsModule,
     UsersModule,
     AuthModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],
