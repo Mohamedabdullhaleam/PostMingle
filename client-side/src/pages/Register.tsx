@@ -12,7 +12,10 @@ import {
   Star,
   Shield,
   Zap,
+  LogIn,
+  ShieldOff,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
@@ -40,7 +43,21 @@ const Register = () => {
       toast.success("Account created successfully!");
       navigate("/");
     } catch (error: any) {
-      toast.error(error.message);
+      console.log("Register error:", error);
+
+      const msg = error.message?.toLowerCase() || "";
+
+      if (msg.includes("email")) {
+        toast.error("Account already exists. Want to login?", {
+          icon: <ShieldOff className="text-red-500 w-5 h-5" />,
+          action: {
+            label: "Login",
+            onClick: () => navigate("/login"),
+          },
+        });
+      } else {
+        toast.error(error.message || "Registration failed");
+      }
     }
   };
 

@@ -11,8 +11,10 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const message = error.response?.data?.message || "An error occurred";
-    return Promise.reject(new Error(message));
+    const customError = new Error();
+    customError.name = error.response?.status || "Unknown Status";
+    customError.message = error.response?.data?.message || "An error occurred";
+    return Promise.reject(customError);
   }
 );
 
