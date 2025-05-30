@@ -41,7 +41,7 @@ const Register = () => {
     try {
       await register(values.name, values.email, values.password);
       toast.success("Account created successfully!");
-      navigate("/");
+      navigate("/login");
     } catch (error: any) {
       console.log("Register error:", error);
 

@@ -11,7 +11,8 @@ import {
 } from "./ui/dropdown-menu";
 
 const Header = () => {
-  const { user, logout } = useAuth();
+  const { register, login, logout, isLoading, user, token } = useAuth();
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -52,12 +53,12 @@ const Header = () => {
                     className="flex items-center space-x-2 hover:bg-light-green"
                   >
                     <img
-                      src={user.avatar}
-                      alt={user.name || "User avatar"}
+                      src="https://api.dicebear.com/7.x/avataaars/svg?seed=male"
+                      alt="User Avatar"
                       className="w-8 h-8 rounded-full object-cover"
                     />
                     <span className="hidden md:block text-text-color font-medium">
-                      {user.name}
+                      {user.username}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>

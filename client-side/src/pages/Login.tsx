@@ -31,8 +31,10 @@ const Login = () => {
       await login(formData.email, formData.password);
       toast.success("Welcome back!");
       navigate("/");
-    } catch (error) {
-      toast.error("Login failed. Please check your credentials.");
+    } catch (error: any) {
+      toast.error(
+        error.message || "Login failed. Please check your credentials."
+      );
     }
   };
 
