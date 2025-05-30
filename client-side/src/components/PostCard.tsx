@@ -89,14 +89,14 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike }) => {
                 variant="ghost"
                 size="sm"
                 onClick={handleLike}
-                className={`p-0 h-auto hover:bg-transparent group/like ${
+                className={`p-0 h-auto hover:bg-transparent group/like cursor-pointer ${
                   post.isLiked
                     ? "text-red-500"
                     : "text-light-color hover:text-red-500"
                 }`}
               >
                 <Heart
-                  className={`w-4 h-4 mr-1 transition-colors ${
+                  className={`w-4 h-4 mr-1 transition-colors cursor-pointer ${
                     post.isLiked
                       ? "fill-current"
                       : "group-hover/like:fill-current"
