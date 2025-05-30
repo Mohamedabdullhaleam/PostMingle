@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useAuth } from "./AuthContext";
 
 // types/Post.ts
+const token = localStorage.getItem("token");
 
 export type User = {
   _id: string;
@@ -50,13 +51,23 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
 
   const fetchPosts = async () => {
     try {
       setIsRefreshing(true);
       const res = await api.get("/posts");
-      setPosts(res.data.data || []);
+
+      const postsData = res.data.data;
+
+      const updatedPosts = postsData.map((post: Post) => {
+        const isLiked = post.likes.some(
+          (likeUser) => likeUser._id === user?.id
+        );
+        return { ...post, isLiked };
+      });
+
+      setPosts(updatedPosts || []);
       setError(null);
     } catch (err: any) {
       console.error(err);
@@ -72,6 +83,11 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const likePost = async (postId: string) => {
+    if (!user) {
+      toast.error("You need to be logged in to like posts.");
+      return;
+    }
+
     try {
       setPosts((prev) =>
         prev.map((post) =>
@@ -80,10 +96,15 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
                 ...post,
                 isLiked: !post.isLiked,
                 likes: post.isLiked
-                  ? post.likes.filter(
-                      (user) => user._id !== (post.user?._id ?? "")
-                    )
-                  : [...post.likes, post.user],
+                  ? post.likes.filter((likeUser) => likeUser._id !== user.id)
+                  : [
+                      ...post.likes,
+                      {
+                        _id: user.id,
+                        username: user.username,
+                        email: user.email,
+                      },
+                    ],
               }
             : post
         )
@@ -91,7 +112,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
       await api.post(`/posts/${postId}/like`);
     } catch (err: any) {
       toast.error(err.message || "Failed to update like status");
-      fetchPosts();
+      fetchPosts(); // Refetch posts on error to sync state
     }
   };
 
