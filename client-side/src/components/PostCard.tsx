@@ -12,7 +12,7 @@ export interface Post {
   author: {
     id: string;
     name: string;
-    avatar: string;
+    avatar?: string;
   };
   createdAt: Date;
   likes: number;
