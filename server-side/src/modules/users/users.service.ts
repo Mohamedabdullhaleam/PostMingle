@@ -30,7 +30,7 @@ export class UsersService {
       email,
       password: hashedPassword,
     });
-    newUser.save();
+    await newUser.save();
     const { _id } = newUser;
     return { _id, username, email };
   }

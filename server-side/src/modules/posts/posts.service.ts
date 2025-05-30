@@ -7,10 +7,11 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument } from './post.schema';
-import { isValidObjectId, Model } from 'mongoose';
+import mongoose, { isValidObjectId, Model } from 'mongoose';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { validateId } from 'src/common/utils/validate-id.util';
+import { CreateCommentDto } from './dto/create-comment.dto';
 
 @Injectable()
 export class PostsService {
@@ -21,16 +22,17 @@ export class PostsService {
 
   async create(createPostDto: CreatePostDto, userId: string): Promise<Post> {
     const createdPost = new this.postModel({
-      ...createPostDto,
       user: userId,
+      ...createPostDto,
     });
     return createdPost.save();
   }
 
   async findAll(): Promise<Post[]> {
     return this.postModel
-      .find()
-      .populate('user', 'username email')
+      .find({ deleted: { $ne: true } })
+      .populate('user', '_id username email')
+      .populate('likes', 'username email')
       .sort({ createdAt: -1 })
       .lean()
       .exec();
@@ -38,7 +40,13 @@ export class PostsService {
 
   async findOne(id: string): Promise<Post> {
     validateId(id);
-    const post = await this.postModel.findById(id).lean().exec();
+    const post = await this.postModel
+      .findOne({ _id: id, deleted: false })
+      .populate('user', '_id username email')
+      .populate('likes', 'username email')
+      .populate('comments.user', 'username email')
+      .exec();
+
     if (!post) {
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
@@ -70,7 +78,15 @@ export class PostsService {
     validateId(id);
     await this.checkOwnership(id, userId);
     this.logger.log(`Deleting post with ID: ${id}`);
-    const result = await this.postModel.findByIdAndDelete(id).lean().exec();
+
+    const result = await this.postModel
+      .findOneAndUpdate(
+        { _id: id, deleted: false },
+        { deleted: true },
+        { new: true },
+      )
+      .lean()
+      .exec();
     if (!result) {
       this.logger.warn(`Post with ID ${id} not found`);
       throw new NotFoundException(`Post with ID ${id} not found`);
@@ -79,14 +95,87 @@ export class PostsService {
     return `Post with ID ${id} deleted successfully ✔`;
   }
 
+  async likePost(postId: string, userId: string): Promise<Post> {
+    validateId(postId);
+    validateId(userId);
+
+    const post = await this.postModel.findById(postId);
+    if (!post) throw new NotFoundException('Post not found');
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const hasLiked = post.likes.some((likeId) => likeId.equals(userObjectId));
+
+    if (hasLiked) {
+      post.likes = post.likes.filter((likeId) => !likeId.equals(userObjectId));
+    } else {
+      post.likes.push(userObjectId);
+    }
+
+    return post
+      .save()
+      .then((savedPost) => savedPost.populate('likes', 'username email'));
+  }
+
+  async addComment(
+    postId: string,
+    userId: string,
+    createCommentDto: CreateCommentDto,
+  ): Promise<Post> {
+    validateId(postId);
+    validateId(userId);
+
+    const comment = {
+      user: new mongoose.Types.ObjectId(userId),
+      content: createCommentDto.content,
+      createdAt: new Date(),
+    };
+
+    const updatedPost = await this.postModel
+      .findByIdAndUpdate(
+        postId,
+        { $push: { comments: comment } },
+        { new: true, runValidators: true },
+      )
+      .populate('comments.user', 'username email');
+
+    if (!updatedPost) {
+      throw new NotFoundException(`Post with ID ${postId} not found`);
+    }
+    return updatedPost;
+  }
+
+  async getComments(postId: string, page: number, limit: number) {
+    validateId(postId);
+    const post = await this.postModel
+      .findById(postId)
+      .populate('comments.user', 'username email');
+    if (!post) throw new NotFoundException('Post not found');
+    const comments = post.comments.slice((page - 1) * limit, page * limit);
+    return comments.map((comment) => ({
+      user: comment.user,
+      content: comment.content,
+      createdAt: comment.createdAt,
+    }));
+  }
+
   async count(): Promise<number> {
     return this.postModel.countDocuments();
   }
-  async checkOwnership(postId: string, userId: string): Promise<Post> {
+
+  async checkOwnership(postId: string, userId: string): Promise<PostDocument> {
     const post = await this.postModel.findById(postId).exec();
+    console.log('OwnerShip', post);
+
     if (!post) {
       throw new NotFoundException(`Post with ID ${postId} not found`);
     }
+
+    if (!post.user) {
+      throw new ForbiddenException(
+        `Post with ID ${postId} has no user assigned`,
+      );
+    }
+    console.log('Ownership', post.user.toString(), userId);
     if (post.user.toString() !== userId) {
       throw new ForbiddenException(
         'You are not authorized to modify this post',
