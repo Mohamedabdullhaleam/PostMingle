@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { LogOut, User, Menu, X } from "lucide-react";
 import { Button } from "./ui/button";
@@ -12,16 +12,36 @@ import {
 
 const Header = () => {
   const { user, logout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <header className="bg-white border-b border-light-green sticky top-0 z-40 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
-            <Link to="/" className="text-3xl font-bold text-flag-color">
-              PostMingle
-            </Link>
-          </div>
+          {/* Logo */}
+          <Link to="/" className="text-2xl font-bold text-main-color">
+            PostMingle
+          </Link>
+
+          {/* Center Nav Links */}
+          <nav className="hidden md:flex items-center space-x-6">
+            {["/", "/about", "/contact"].map((path, index) => (
+              <NavLink
+                key={path}
+                to={path}
+                end
+                className={({ isActive }) =>
+                  `font-semibold ${
+                    isActive
+                      ? "text-main-color underline underline-offset-4"
+                      : "text-text-color hover:text-main-color"
+                  }`
+                }
+              >
+                {["Home", "About", "Contact"][index]}
+              </NavLink>
+            ))}
+          </nav>
 
           <div className="flex items-center space-x-4">
             {user ? (
@@ -33,18 +53,26 @@ const Header = () => {
                   >
                     <img
                       src={user.avatar}
-                      alt={user.name}
-                      className="w-8 h-8 rounded-full"
+                      alt={user.name || "User avatar"}
+                      className="w-8 h-8 rounded-full object-cover"
                     />
                     <span className="hidden md:block text-text-color font-medium">
                       {user.name}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem className="flex items-center space-x-2">
-                    <User className="w-4 h-4" />
-                    <span>Profile</span>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 bg-white text-text-color shadow-lg rounded-md"
+                >
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to="/profile"
+                      className="flex items-center space-x-2 w-full"
+                    >
+                      <User className="w-4 h-4" />
+                      <span>Profile</span>
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={logout}
@@ -63,21 +91,46 @@ const Header = () => {
               </Link>
             )}
 
-            {/* <Button
+            {/* Mobile Menu Button */}
+            <Button
               variant="ghost"
               size="sm"
-              className="md:hidden"
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden transition-transform duration-200"
             >
               {isMobileMenuOpen ? (
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 rotate-180" />
               ) : (
                 <Menu className="w-5 h-5" />
               )}
-            </Button> */}
+            </Button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-white border-t border-light-green">
+          <nav className="p-4  space-y-2">
+            {["/", "/about", "/contact"].map((path, index) => (
+              <NavLink
+                key={path}
+                to={path}
+                end
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={({ isActive }) =>
+                  `block font-semibold ${
+                    isActive ? "text-main-color" : "text-text-color"
+                  }`
+                }
+              >
+                {["Home", "About", "Contact"][index]}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      )}
     </header>
   );
 };
