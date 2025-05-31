@@ -209,7 +209,7 @@ const Register = () => {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 bg-sec-color hover:bg-btn-color text-white font-semibold rounded-lg transition-colors"
+                  className="w-full h-12 bg-sec-color hover:bg-btn-color text-white font-semibold rounded-lg transition-colors cursor-pointer"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -260,36 +260,6 @@ const Register = () => {
               Join thousands of writers sharing their thoughts, experiences, and
               expertise with the world.
             </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6">
-            <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
-              <Zap className="w-8 h-8 text-flag-color" />
-              <div>
-                <h3 className="font-semibold">Quick Setup</h3>
-                <p className="text-sm text-white/80">
-                  Get started in under 2 minutes
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
-              <Shield className="w-8 h-8 text-flag-color" />
-              <div>
-                <h3 className="font-semibold">Secure Platform</h3>
-                <p className="text-sm text-white/80">
-                  Your data is safe with us
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
-              <BookOpen className="w-8 h-8 text-flag-color" />
-              <div>
-                <h3 className="font-semibold">Rich Editor</h3>
-                <p className="text-sm text-white/80">
-                  Beautiful posts with media support
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
