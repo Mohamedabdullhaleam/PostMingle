@@ -143,11 +143,11 @@ const PostCard: React.FC<PostCardProps> = ({
                   <span className="text-xs">{post.comments}</span>
                 </div>
 
-                {/* Delete button - only for owner */}
+              
                 {post.author.id === currentUserId && onDelete && (
                   <button
                     onClick={handleDeleteClick}
-                    className="text-red-500 hover:text-red-700"
+                    className="text-red-500 hover:text-red-800 cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

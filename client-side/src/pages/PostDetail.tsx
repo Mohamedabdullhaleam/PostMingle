@@ -348,7 +348,7 @@ const PostDetail = () => {
                     className="min-h-[100px]"
                     disabled={isCommenting || !user}
                   />
-                  <div className="mt-3 flex justify-end cursor-pointer">
+                  <div className="mt-3 flex justify-end">
                     <Button
                       type="submit"
                       disabled={isCommenting || !newComment.trim() || !user}
