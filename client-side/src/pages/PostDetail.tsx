@@ -160,25 +160,15 @@ const PostDetail = () => {
           },
         }
       );
-
       if (response.data.success) {
-        const newCommentData: Comment = {
-          ...response.data.data,
-          user: {
-            _id: user.id,
-            username: user.username,
-            email: user.email,
-          },
-        };
-
-        // Update post with new comment
+        const updatedComments = response.data.data.comments;
+        const newCommentData = updatedComments[updatedComments.length - 1];
         if (post) {
           setPost({
             ...post,
             comments: [newCommentData, ...post.comments],
           });
         }
-
         setNewComment("");
         toast.success("Comment added successfully");
       } else {
@@ -358,7 +348,7 @@ const PostDetail = () => {
                     className="min-h-[100px]"
                     disabled={isCommenting || !user}
                   />
-                  <div className="mt-3 flex justify-end">
+                  <div className="mt-3 flex justify-end cursor-pointer">
                     <Button
                       type="submit"
                       disabled={isCommenting || !newComment.trim() || !user}
