@@ -197,7 +197,7 @@ const Login = () => {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-12 px-3 hover:bg-transparent rounded-xl"
+                        className="absolute right-0 top-0 h-12 px-3 hover:bg-transparent rounded-xl cursor-pointer"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
@@ -225,7 +225,7 @@ const Login = () => {
 
                   <Button
                     type="submit"
-                    className="w-full h-12 bg-gradient-to-r from-btn-color to-sec-color hover:from-sec-color hover:to-btn-color text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] group"
+                    className="w-full h-12 bg-gradient-to-r from-btn-color to-sec-color hover:from-sec-color hover:to-btn-color text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] group cursor-pointer"
                     disabled={isLoading || isSubmitting}
                   >
                     {isLoading || isSubmitting ? (
@@ -234,10 +234,7 @@ const Login = () => {
                         Signing In...
                       </>
                     ) : (
-                      <>
-                        Sign In
-                        <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                      </>
+                      <>Sign In</>
                     )}
                   </Button>
 
