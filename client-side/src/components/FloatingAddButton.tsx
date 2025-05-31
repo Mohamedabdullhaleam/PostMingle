@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "../contexts/AuthContext";
 import CreatePostModal from "./CreatePostModal";
+import { toast } from "sonner";
 
 const FloatingAddButton = () => {
   const { user } = useAuth();
@@ -14,7 +15,7 @@ const FloatingAddButton = () => {
     if (user) {
       setShowCreateModal(true);
     } else {
-      navigate("/login");
+      toast.error("You need to be logged in to add a posts.");
     }
   };
 

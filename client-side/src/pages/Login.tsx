@@ -64,9 +64,9 @@ const Login = () => {
       </div>
 
       {/* Left Side - Hero Section */}
-      <div className="hidden lg:flex lg:w-1/2 text-white p-12 flex-col justify-center relative z-10">
+      <div className="hidden lg:flex lg:w-1/2 text-white p-14 flex-col justify-center relative z-10">
         <div className="max-w-lg">
-          <div className="mb-8">
+          <div className="mb-5 pl-16">
             <div className="flex items-center mb-6">
               <div className="w-12 h-12 bg-flag-color rounded-xl flex items-center justify-center mr-4">
                 <BookOpen className="w-6 h-6 text-white" />
@@ -80,44 +80,6 @@ const Login = () => {
               Continue your journey of sharing stories, connecting with readers,
               and building your digital presence in our vibrant community.
             </p>
-          </div>
-
-          <div className="space-y-6">
-            <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 hover:bg-white/15 transition-all duration-300">
-              <div className="w-12 h-12 bg-flag-color/20 rounded-xl flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-flag-color" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">Rich Content Creation</h3>
-                <p className="text-sm text-white/80">
-                  Create beautiful posts with images and rich formatting
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 hover:bg-white/15 transition-all duration-300">
-              <div className="w-12 h-12 bg-flag-color/20 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-flag-color" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">Vibrant Community</h3>
-                <p className="text-sm text-white/80">
-                  Connect with fellow writers and passionate readers
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 hover:bg-white/15 transition-all duration-300">
-              <div className="w-12 h-12 bg-flag-color/20 rounded-xl flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-flag-color" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">Easy Publishing</h3>
-                <p className="text-sm text-white/80">
-                  Share your thoughts effortlessly with our intuitive editor
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
