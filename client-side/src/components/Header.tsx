@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { LogOut, User, Menu, X } from "lucide-react";
 import { Button } from "./ui/button";
@@ -14,6 +14,12 @@ const Header = () => {
   const { register, login, logout, isLoading, user, token } = useAuth();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <header className="bg-white border-b border-light-green sticky top-0 z-40 shadow-sm">
@@ -76,8 +82,8 @@ const Header = () => {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={logout}
-                    className="flex items-center space-x-2 text-red-600"
+                    onClick={handleLogout}
+                    className="flex items-center space-x-2 text-red-600 cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Logout</span>

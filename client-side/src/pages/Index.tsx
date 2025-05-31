@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 const storedUser = localStorage.getItem("user");
 const user = storedUser ? JSON.parse(storedUser) : null;
-const user_id = user.id;
+const user_id = user?.id || "";
 console.log("[uer_id]", user_id);
 const Index = () => {
   const { posts, isLoading, likePost, deletePost } = usePosts();
