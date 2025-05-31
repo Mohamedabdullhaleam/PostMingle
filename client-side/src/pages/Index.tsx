@@ -6,9 +6,15 @@ import PostCard from "../components/PostCard";
 import FloatingAddButton from "../components/FloatingAddButton";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import api from "../api/axios";
+import { toast } from "sonner";
 
+const storedUser = localStorage.getItem("user");
+const user = storedUser ? JSON.parse(storedUser) : null;
+const user_id = user.id;
+console.log("[uer_id]", user_id);
 const Index = () => {
-  const { posts, isLoading, likePost } = usePosts();
+  const { posts, isLoading, likePost, deletePost } = usePosts();
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredPosts = posts.filter(
@@ -17,6 +23,20 @@ const Index = () => {
       post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.user.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleDelete = async (postId: string) => {
+    try {
+      const response = await api.delete(`/posts/${postId}`);
+      deletePost(postId);
+      toast.success("Post deleted successfully!");
+
+      console.log("Post deleted:", response.data);
+    } catch (error) {
+      toast.error("Failed to delete post");
+
+      console.error("Error deleting post:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-light-green">
@@ -82,6 +102,8 @@ const Index = () => {
                     "https://images.unsplash.com/photo-1743404318518-32d963f26501?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
                 }}
                 onLike={() => likePost(post._id)}
+                currentUserId={user_id}
+                onDelete={handleDelete}
               />
             ))}
           </div>

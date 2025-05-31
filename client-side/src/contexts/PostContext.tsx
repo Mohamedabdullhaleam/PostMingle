@@ -3,9 +3,6 @@ import api from "../api/axios";
 import { toast } from "sonner";
 import { useAuth } from "./AuthContext";
 
-// types/Post.ts
-const token = localStorage.getItem("token");
-
 export type User = {
   _id: string;
   username: string;
@@ -40,6 +37,8 @@ interface PostContextType {
   error: string | null;
   fetchPosts: () => void;
   likePost: (postId: string) => void;
+  deletePost: (postId: string) => void;
+  addPost: (newPost: Post) => void;
 }
 
 const PostContext = createContext<PostContextType | undefined>(undefined);
@@ -53,10 +52,16 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
   const [error, setError] = useState<string | null>(null);
   const { user, logout } = useAuth();
 
+  const getToken = () => localStorage.getItem("token");
+
   const fetchPosts = async () => {
     try {
       setIsRefreshing(true);
-      const res = await api.get("/posts");
+      const res = await api.get("/posts", {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
 
       const postsData = res.data.data;
 
@@ -71,8 +76,10 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
       setError(null);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Failed to load posts");
-      if (err.name === "401") {
+      const errorMsg = err.response?.data?.message || "Failed to load posts";
+      setError(errorMsg);
+
+      if (err.response?.status === 401) {
         toast.error("Session expired. Please login again.");
         logout();
       }
@@ -89,6 +96,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     try {
+      // Optimistic UI update
       setPosts((prev) =>
         prev.map((post) =>
           post._id === postId
@@ -109,11 +117,69 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
             : post
         )
       );
-      await api.post(`/posts/${postId}/like`);
+
+      await api.post(
+        `/posts/${postId}/like`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+          },
+        }
+      );
     } catch (err: any) {
-      toast.error(err.message || "Failed to update like status");
-      fetchPosts(); // Refetch posts on error to sync state
+      toast.error(
+        err.response?.data?.message || "Failed to update like status"
+      );
+      fetchPosts();
     }
+  };
+
+  const deletePost = async (postId: string) => {
+    try {
+      // Optimistic UI update
+      setPosts((prev) => prev.filter((post) => post._id !== postId));
+
+      await api.delete(`/posts/${postId}`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
+
+      toast.success("Post deleted successfully");
+    } catch (err: any) {
+      fetchPosts();
+
+      const errorMessage =
+        err.response?.data?.message || "Failed to delete post";
+      toast.error(errorMessage);
+
+      if (err.response?.status === 401) {
+        toast.error("Session expired. Please login again.");
+        logout();
+      }
+    }
+  };
+
+  const addPost = (newPost: Post) => {
+    setPosts((prevPosts) => {
+      const exists = prevPosts.some((post) => post._id === newPost._id);
+      if (!exists) {
+        return [
+          {
+            ...newPost,
+            createdAt: newPost.createdAt || new Date().toISOString(),
+            updatedAt: newPost.updatedAt || new Date().toISOString(),
+            deleted: newPost.deleted || false,
+            likes: newPost.likes || [],
+            comments: newPost.comments || [],
+            isLiked: newPost.isLiked || false,
+          },
+          ...prevPosts,
+        ];
+      }
+      return prevPosts;
+    });
   };
 
   useEffect(() => {
@@ -122,7 +188,16 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <PostContext.Provider
-      value={{ posts, isLoading, isRefreshing, error, fetchPosts, likePost }}
+      value={{
+        posts,
+        isLoading,
+        isRefreshing,
+        error,
+        fetchPosts,
+        likePost,
+        deletePost,
+        addPost,
+      }}
     >
       {children}
     </PostContext.Provider>

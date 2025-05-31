@@ -25,8 +25,8 @@ const Header = () => {
           </Link>
 
           {/* Center Nav Links */}
-          <nav className="hidden md:flex items-center space-x-6">
-            {["/", "/about", "/contact"].map((path, index) => (
+          {/* <nav className="hidden md:flex items-center space-x-6">
+            {["/"].map((path, index) => (
               <NavLink
                 key={path}
                 to={path}
@@ -39,10 +39,10 @@ const Header = () => {
                   }`
                 }
               >
-                {["Home", "About", "Contact"][index]}
+                {["Home"][index]}
               </NavLink>
             ))}
-          </nav>
+          </nav> */}
 
           <div className="flex items-center space-x-4">
             {user ? (
@@ -114,7 +114,7 @@ const Header = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-light-green">
           <nav className="p-4  space-y-2">
-            {["/", "/about", "/contact"].map((path, index) => (
+            {["/"].map((path, index) => (
               <NavLink
                 key={path}
                 to={path}
@@ -126,7 +126,7 @@ const Header = () => {
                   }`
                 }
               >
-                {["Home", "About", "Contact"][index]}
+                {["Home"][index]}
               </NavLink>
             ))}
           </nav>

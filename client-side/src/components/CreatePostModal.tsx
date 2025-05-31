@@ -6,10 +6,12 @@ import { Textarea } from "./ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Upload, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "../contexts/AuthContext";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import api from "../api/axios";
+import usePost from "../hooks/usePost";
+import useFileUpload from "../hooks/useFileUpload";
+import { usePosts } from "@/contexts/PostContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -17,68 +19,25 @@ interface CreatePostModalProps {
   onPostCreated?: () => void;
 }
 
+const validationSchema = Yup.object({
+  title: Yup.string()
+    .required("Title is required")
+    .max(100, "Title must be 100 characters or less"),
+  content: Yup.string()
+    .required("Content is required")
+    .max(5000, "Content must be 5000 characters or less"),
+});
+
 const CreatePostModal: React.FC<CreatePostModalProps> = ({
   isOpen,
   onClose,
   onPostCreated,
 }) => {
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const { addPost } = usePosts();
   const { user } = useAuth();
-
-  const validationSchema = Yup.object({
-    title: Yup.string()
-      .required("Title is required")
-      .max(100, "Title must be 100 characters or less"),
-    content: Yup.string()
-      .required("Content is required")
-      .max(5000, "Content must be 5000 characters or less"),
-    image: Yup.string(),
-  });
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image size should be less than 5MB");
-      return;
-    }
-
-    setImagePreview(URL.createObjectURL(file));
-    formik.setFieldValue("image", file);
-  };
-
-  const removeImage = () => {
-    setImagePreview(null);
-    formik.setFieldValue("image", null);
-    // Clear file input
-    const fileInput = document.getElementById(
-      "image-upload"
-    ) as HTMLInputElement;
-    if (fileInput) fileInput.value = "";
-  };
-
-  const uploadImage = async (file: File): Promise<string | null> => {
-    try {
-      setIsUploading(true);
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await api.post("/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      return response.data.data.fileUrl;
-    } catch (error) {
-      toast.error("Failed to upload image");
-      return null;
-    } finally {
-      setIsUploading(false);
-    }
-  };
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const { uploadFile, isUploading } = useFileUpload();
+  const { createPost, isCreating } = usePost();
 
   const formik = useFormik({
     initialValues: {
@@ -92,27 +51,36 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         let imageUrl = "";
 
         if (values.image) {
-          const uploadedUrl = await uploadImage(values.image);
-          if (!uploadedUrl) return;
-          imageUrl = uploadedUrl;
+          imageUrl = await uploadFile(values.image);
+          if (!imageUrl) return;
         }
 
-        // Create post
-        const response = await api.post("/posts", {
+        // Create post and get the response
+        const response = await createPost({
           title: values.title,
           content: values.content,
           image: imageUrl,
         });
 
-        if (response.status >= 200 && response.status < 300) {
-          toast.success("Post created successfully!");
-          onPostCreated?.();
-          onClose();
-          resetForm();
-          setImagePreview(null);
-        } else {
-          throw new Error("Failed to create post");
+        // Add new post to context for immediate UI update
+        if (response && response.data) {
+          addPost({
+            ...response.data,
+            user: {
+              _id: user?.id || "",
+              username: user?.username || "You",
+              email: user?.email || "",
+            },
+            likes: [],
+            comments: [],
+            isLiked: false,
+            createdAt: new Date().toISOString(),
+          });
         }
+
+        toast.success("Post created successfully!");
+        onPostCreated?.();
+        handleModalClose();
       } catch (error: any) {
         toast.error(error.message || "Error creating post");
       } finally {
@@ -121,14 +89,42 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     },
   });
 
-  const handleClose = () => {
+  const handleImageUpload = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size should be less than 5MB");
+        return;
+      }
+
+      setImagePreview(URL.createObjectURL(file));
+      formik.setFieldValue("image", file);
+    },
+    [formik]
+  );
+
+  const removeImage = useCallback(() => {
+    setImagePreview(null);
+    formik.setFieldValue("image", null);
+
+    const fileInput = document.getElementById(
+      "image-upload"
+    ) as HTMLInputElement;
+    if (fileInput) fileInput.value = "";
+  }, [formik]);
+
+  const handleModalClose = useCallback(() => {
     formik.resetForm();
     setImagePreview(null);
     onClose();
-  };
+  }, [formik, onClose]);
+
+  const isSubmitting = formik.isSubmitting || isCreating || isUploading;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={handleModalClose}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl text-text-color">
@@ -137,7 +133,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         </DialogHeader>
 
         <form onSubmit={formik.handleSubmit} className="space-y-6">
-          {/* Title */}
+          {/* Title Field */}
           <div className="space-y-2">
             <Label htmlFor="title" className="text-text-color font-medium">
               Title *
@@ -156,13 +152,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             )}
           </div>
 
-          {/* Image Upload */}
+          {/* Image Upload Field */}
           <div className="space-y-2">
             <Label className="text-text-color font-medium">
               Cover Image (Optional)
             </Label>
 
-            {/* Image Preview */}
             {imagePreview ? (
               <div className="relative">
                 <img
@@ -176,7 +171,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   size="sm"
                   onClick={removeImage}
                   className="absolute top-2 right-2 bg-white/80 hover:bg-white shadow-sm"
-                  disabled={formik.isSubmitting}
+                  disabled={isSubmitting}
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -198,7 +193,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   asChild
                   variant="outline"
                   size="sm"
-                  disabled={formik.isSubmitting}
+                  disabled={isSubmitting}
                 >
                   <Label htmlFor="image-upload" className="cursor-pointer">
                     Select Image
@@ -210,20 +205,15 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               </div>
             )}
 
-            {/* Uploading indicator */}
             {isUploading && (
               <div className="flex items-center mt-2">
                 <Loader2 className="w-4 h-4 mr-2 animate-spin text-main-color" />
                 <span className="text-light-color">Uploading image...</span>
               </div>
             )}
-
-            {formik.touched.image && formik.errors.image && (
-              <p className="text-red-500 text-sm mt-1">{formik.errors.image}</p>
-            )}
           </div>
 
-          {/* Content */}
+          {/* Content Field */}
           <div className="space-y-2">
             <Label htmlFor="content" className="text-text-color font-medium">
               Content *
@@ -244,22 +234,23 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             )}
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end space-x-3 pt-4">
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-3 pt-4 cursor-pointer">
             <Button
               type="button"
+              className="cursor-pointer"
               variant="outline"
-              onClick={handleClose}
-              disabled={formik.isSubmitting}
+              onClick={handleModalClose}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-btn-color hover:bg-sec-color text-white"
-              disabled={formik.isSubmitting || isUploading}
+              className="bg-btn-color hover:bg-sec-color cursor-pointer text-white"
+              disabled={isSubmitting}
             >
-              {formik.isSubmitting ? (
+              {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Publishing...
