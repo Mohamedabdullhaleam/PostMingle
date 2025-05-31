@@ -46,7 +46,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       image: null as File | null,
     },
     validationSchema,
-    onSubmit: async (values, { setSubmitting, resetForm }) => {
+    onSubmit: async (values, { setSubmitting }) => {
       try {
         let imageUrl = "";
 

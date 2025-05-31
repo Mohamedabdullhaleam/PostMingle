@@ -69,7 +69,7 @@ const Index = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="w-12 h-12 border-4 border-t-4 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-12 h-12 border-4 border-t-4 border-main-color border-t-transparent rounded-full animate-spin"></div>
             <p className="ml-4 text-lg text-gray-700">Loading posts...</p>
           </div>
         ) : filteredPosts.length === 0 ? (

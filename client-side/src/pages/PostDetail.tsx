@@ -1,112 +1,206 @@
-import React from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import {
   ArrowLeft,
   Heart,
   MessageCircle,
-  Share2,
   Calendar,
   User,
+  Send,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import Header from "../components/Header";
+import { Textarea } from "../components/ui/textarea";
+import { useAuth } from "../contexts/AuthContext";
+import api from "../api/axios";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
-const mockPosts = [
-  {
-    id: "1",
-    title: "Getting Started with Modern Web Development",
-    content: `Web development has evolved significantly over the past few years. From simple HTML pages to complex single-page applications, the landscape continues to change rapidly. In this comprehensive guide, we'll explore the latest trends, tools, and best practices that every developer should know in 2024.
+interface Author {
+  _id: string;
+  username: string;
+  email: string;
+}
 
-    The modern web development ecosystem is vast and can be overwhelming for newcomers. However, understanding the core principles and staying updated with the latest technologies is essential for success in this field.
+interface Comment {
+  _id: string;
+  content: string;
+  user: Author;
+  createdAt: string;
+}
 
-    ## Key Technologies to Focus On
-
-    ### Frontend Development
-    React, Vue.js, and Angular remain the dominant frameworks for building user interfaces. Each has its strengths:
-    - React: Component-based architecture with a large ecosystem
-    - Vue.js: Progressive framework with gentle learning curve
-    - Angular: Full-featured framework for enterprise applications
-
-    ### Backend Development
-    Node.js, Python (Django/Flask), and modern frameworks like Next.js are reshaping how we build server-side applications.
-
-    ### Styling and UI
-    Tailwind CSS has revolutionized how we approach styling, moving away from traditional CSS methodologies toward utility-first approaches.
-
-    ## Best Practices for 2024
-
-    1. **Performance Optimization**: Focus on Core Web Vitals and user experience metrics
-    2. **Accessibility**: Ensure your applications are usable by everyone
-    3. **Security**: Implement proper authentication and data protection
-    4. **Testing**: Write comprehensive tests for reliability
-    5. **Deployment**: Use modern CI/CD pipelines for efficient releases
-
-    The future of web development looks promising with technologies like WebAssembly, Progressive Web Apps, and AI-assisted development tools becoming more mainstream.`,
-    coverImage:
-      "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&h=400&fit=crop",
-    author: {
-      id: "2",
-      name: "Sarah Johnson",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sarah",
-    },
-    createdAt: new Date("2024-01-15"),
-    likes: 42,
-    comments: 12,
-    isLiked: false,
-  },
-  {
-    id: "2",
-    title: "The Future of Artificial Intelligence",
-    content: `Artificial Intelligence is no longer a concept of the future—it's here and transforming industries at an unprecedented pace. From healthcare to finance, AI is revolutionizing how we work, live, and interact with technology.
-
-    The rapid advancement of AI technologies has created both exciting opportunities and important challenges that we must address as a society.
-
-    ## Current AI Landscape
-
-    ### Machine Learning and Deep Learning
-    These technologies form the backbone of modern AI systems, enabling machines to learn from data and make intelligent decisions.
-
-    ### Natural Language Processing
-    Recent breakthroughs in NLP have led to more sophisticated chatbots, translation services, and content generation tools.
-
-    ### Computer Vision
-    AI can now interpret and analyze visual information with remarkable accuracy, opening new possibilities in healthcare, autonomous vehicles, and security.
-
-    ## Industry Applications
-
-    **Healthcare**: AI assists in diagnosis, drug discovery, and personalized treatment plans.
-    **Finance**: Fraud detection, algorithmic trading, and risk assessment.
-    **Transportation**: Autonomous vehicles and traffic optimization.
-    **Education**: Personalized learning and intelligent tutoring systems.
-
-    ## Ethical Considerations
-
-    As AI becomes more prevalent, we must address:
-    - Privacy and data protection
-    - Algorithmic bias and fairness
-    - Job displacement and economic impact
-    - Transparency and explainability
-
-    The future will likely see even more integration of AI into our daily lives, making it crucial to develop these technologies responsibly.`,
-    author: {
-      id: "3",
-      name: "Michael Chen",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=michael",
-    },
-    createdAt: new Date("2024-01-14"),
-    likes: 89,
-    comments: 23,
-    isLiked: true,
-  },
-];
+interface Post {
+  _id: string;
+  title: string;
+  content: string;
+  image?: string;
+  user: Author;
+  likes: Author[];
+  comments: Comment[];
+  createdAt: string;
+  isLiked?: boolean;
+}
 
 const PostDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [post, setPost] = useState<Post | null>(null);
+  const [newComment, setNewComment] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCommenting, setIsCommenting] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
 
-  // Find the post by ID
-  const post = mockPosts.find((p) => p.id === id);
+  // Fetch post and comments
+  useEffect(() => {
+    const fetchPostData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await api.get(`/posts/${id}`);
+
+        if (response.data.success) {
+          const postData = response.data.data;
+
+          // Check if current user liked the post
+          const isLiked = user
+            ? postData.likes.some(
+                (likeUser: Author) => likeUser._id === user.id
+              )
+            : false;
+
+          setPost({
+            ...postData,
+            isLiked,
+          });
+        } else {
+          toast.error(response.data.message || "Failed to load post");
+        }
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Failed to load post");
+        console.error("Error fetching post:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPostData();
+  }, [id, user]);
+
+  const handleLike = async () => {
+    if (!user) {
+      toast.error("You need to be logged in to like posts");
+      return;
+    }
+
+    try {
+      setIsLiking(true);
+      // Optimistic UI update
+      if (post) {
+        const wasLiked = post.isLiked;
+        const newLikes = wasLiked
+          ? post.likes.filter((likeUser) => likeUser._id !== user.id)
+          : [
+              ...post.likes,
+              {
+                _id: user.id,
+                username: user.username,
+                email: user.email,
+              },
+            ];
+
+        setPost({
+          ...post,
+          likes: newLikes,
+          isLiked: !wasLiked,
+        });
+      }
+
+      // Send API request
+      await api.post(
+        `/posts/${id}/like`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to update like");
+      // Revert on error
+      if (post) {
+        setPost({
+          ...post,
+          likes: post.likes,
+          isLiked: post.isLiked,
+        });
+      }
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+    if (!user) {
+      toast.error("You need to be logged in to comment");
+      return;
+    }
+
+    try {
+      setIsCommenting(true);
+      const response = await api.post(
+        `/posts/${id}/comments`,
+        { content: newComment },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        const newCommentData: Comment = {
+          ...response.data.data,
+          user: {
+            _id: user.id,
+            username: user.username,
+            email: user.email,
+          },
+        };
+
+        // Update post with new comment
+        if (post) {
+          setPost({
+            ...post,
+            comments: [newCommentData, ...post.comments],
+          });
+        }
+
+        setNewComment("");
+        toast.success("Comment added successfully");
+      } else {
+        toast.error(response.data.message || "Failed to add comment");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to add comment");
+    } finally {
+      setIsCommenting(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-light-green">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex justify-center">
+          <Loader2 className="w-12 h-12 animate-spin text-main-color" />
+        </div>
+      </div>
+    );
+  }
 
   if (!post) {
     return (
@@ -133,19 +227,6 @@ const PostDetail = () => {
     );
   }
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: post.title,
-        text: post.content.substring(0, 100) + "...",
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      // You could add a toast notification here
-    }
-  };
-
   return (
     <div className="min-h-screen bg-light-green">
       <Header />
@@ -155,7 +236,7 @@ const PostDetail = () => {
         <div className="mb-8">
           <Button
             variant="ghost"
-            onClick={() => navigate("/")}
+            onClick={() => navigate(-1)}
             className="text-light-color hover:text-text-color hover:bg-main-color/10"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -165,7 +246,7 @@ const PostDetail = () => {
 
         {/* Post Header */}
         <header className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-text-color mb-6 leading-tight">
+          <h1 className="text-3xl md:text-4xl font-bold text-text-color mb-6 leading-tight">
             {post.title}
           </h1>
 
@@ -173,21 +254,23 @@ const PostDetail = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div className="flex items-center space-x-4">
               <img
-                src={post.author.avatar}
-                alt={post.author.name}
+                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${post.user._id}`}
+                alt={post.user.username}
                 className="w-12 h-12 rounded-full border-2 border-main-color"
               />
               <div>
                 <div className="flex items-center space-x-2">
                   <User className="w-4 h-4 text-light-color" />
                   <span className="font-semibold text-text-color">
-                    {post.author.name}
+                    {post.user.username}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2 text-light-color text-sm">
                   <Calendar className="w-4 h-4" />
                   <span>
-                    {formatDistanceToNow(post.createdAt, { addSuffix: true })}
+                    {formatDistanceToNow(new Date(post.createdAt), {
+                      addSuffix: true,
+                    })}
                   </span>
                 </div>
               </div>
@@ -198,14 +281,24 @@ const PostDetail = () => {
               <Button
                 variant="outline"
                 size="sm"
-                className="border-light-color text-light-color hover:bg-main-color hover:text-white hover:border-main-color"
+                onClick={handleLike}
+                disabled={isLiking}
+                className={`border-light-color text-light-color hover:bg-main-color hover:text-white hover:border-main-color ${
+                  post.isLiked
+                    ? "bg-red-100 border-red-200 text-red-500 hover:bg-red-100"
+                    : ""
+                }`}
               >
-                <Heart
-                  className={`w-4 h-4 mr-2 ${
-                    post.isLiked ? "fill-current" : ""
-                  }`}
-                />
-                {post.likes}
+                {isLiking ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Heart
+                    className={`w-4 h-4 mr-2 ${
+                      post.isLiked ? "fill-current" : ""
+                    }`}
+                  />
+                )}
+                {post.likes.length}
               </Button>
               <Button
                 variant="outline"
@@ -213,26 +306,17 @@ const PostDetail = () => {
                 className="border-light-color text-light-color hover:bg-main-color hover:text-white hover:border-main-color"
               >
                 <MessageCircle className="w-4 h-4 mr-2" />
-                {post.comments}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleShare}
-                className="border-light-color text-light-color hover:bg-main-color hover:text-white hover:border-main-color"
-              >
-                <Share2 className="w-4 h-4 mr-2" />
-                Share
+                {post.comments.length}
               </Button>
             </div>
           </div>
         </header>
 
         {/* Cover Image */}
-        {post.coverImage && (
+        {post.image && (
           <div className="mb-8">
             <img
-              src={post.coverImage}
+              src={post.image}
               alt={post.title}
               className="w-full h-64 md:h-96 object-cover rounded-xl shadow-lg"
             />
@@ -240,116 +324,101 @@ const PostDetail = () => {
         )}
 
         {/* Post Content */}
-        <div className="prose prose-lg max-w-none">
-          <div className="bg-white rounded-xl p-8 shadow-sm border border-main-color/10">
-            <div className="text-text-color leading-relaxed space-y-6">
-              {post.content.split("\n\n").map((paragraph, index) => {
-                if (paragraph.startsWith("##")) {
-                  return (
-                    <h2
-                      key={index}
-                      className="text-2xl font-bold text-text-color mt-8 mb-4 border-b-2 border-main-color/20 pb-2"
-                    >
-                      {paragraph.replace("## ", "")}
-                    </h2>
-                  );
-                }
-                if (paragraph.startsWith("###")) {
-                  return (
-                    <h3
-                      key={index}
-                      className="text-xl font-semibold text-text-color mt-6 mb-3"
-                    >
-                      {paragraph.replace("### ", "")}
-                    </h3>
-                  );
-                }
-                if (paragraph.includes("**") && paragraph.includes(":")) {
-                  return (
-                    <p key={index} className="text-base">
-                      {paragraph.split("**").map((part, partIndex) => {
-                        if (partIndex % 2 === 1) {
-                          return (
-                            <strong
-                              key={partIndex}
-                              className="font-semibold text-text-color"
-                            >
-                              {part}
-                            </strong>
-                          );
-                        }
-                        return part;
-                      })}
-                    </p>
-                  );
-                }
-                if (paragraph.trim().startsWith("-")) {
-                  const items = paragraph
-                    .split("\n")
-                    .filter((line) => line.trim().startsWith("-"));
-                  return (
-                    <ul key={index} className="list-disc pl-6 space-y-2">
-                      {items.map((item, itemIndex) => (
-                        <li key={itemIndex} className="text-base">
-                          {item.replace("- ", "")}
-                        </li>
-                      ))}
-                    </ul>
-                  );
-                }
-                if (paragraph.trim().match(/^\d+\./)) {
-                  const items = paragraph
-                    .split("\n")
-                    .filter((line) => line.trim().match(/^\d+\./));
-                  return (
-                    <ol key={index} className="list-decimal pl-6 space-y-2">
-                      {items.map((item, itemIndex) => (
-                        <li key={itemIndex} className="text-base">
-                          {item
-                            .replace(/^\d+\.\s*/, "")
-                            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}
-                        </li>
-                      ))}
-                    </ol>
-                  );
-                }
-                return (
-                  <p key={index} className="text-base leading-relaxed">
-                    {paragraph}
-                  </p>
-                );
-              })}
+        <div className="prose prose-lg max-w-none mb-12">
+          <div className="bg-white rounded-xl p-6 md:p-8 shadow-sm border border-main-color/10">
+            <div className="text-text-color leading-relaxed whitespace-pre-line">
+              {post.content}
             </div>
           </div>
         </div>
 
-        {/* Bottom Actions */}
-        <div className="mt-12 pt-8 border-t border-main-color/20">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center space-x-4">
-              <Button className="bg-main-color hover:bg-sec-color text-white">
-                <Heart
-                  className={`w-4 h-4 mr-2 ${
-                    post.isLiked ? "fill-current" : ""
-                  }`}
-                />
-                {post.isLiked ? "Liked" : "Like"} ({post.likes})
-              </Button>
-              <Button
-                variant="outline"
-                className="border-main-color text-main-color hover:bg-main-color hover:text-white"
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Comment
-              </Button>
+        {/* Comments Section */}
+        <div className="border-t border-main-color/20 pt-8">
+          <h2 className="text-2xl font-bold mb-6 flex items-center">
+            <MessageCircle className="w-6 h-6 mr-2 text-main-color" />
+            Comments ({post.comments.length})
+          </h2>
+
+          {/* Add Comment Form */}
+          <div className="mb-8">
+            <div className="flex items-start gap-4">
+              <img
+                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${
+                  user?.id || "guest"
+                }`}
+                alt={user?.username || "You"}
+                className="w-10 h-10 rounded-full mt-1"
+              />
+              <div className="flex-1">
+                <form onSubmit={handleAddComment}>
+                  <Textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Share your thoughts..."
+                    className="min-h-[100px]"
+                    disabled={isCommenting || !user}
+                  />
+                  <div className="mt-3 flex justify-end">
+                    <Button
+                      type="submit"
+                      disabled={isCommenting || !newComment.trim() || !user}
+                      className="bg-main-color hover:bg-sec-color"
+                    >
+                      {isCommenting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Posting...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-2" />
+                          Post Comment
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </div>
             </div>
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/")}
-              className="text-light-color hover:text-text-color"
-            >
-              ← Back to all posts
-            </Button>
+          </div>
+
+          {/* Comments List */}
+          <div className="space-y-6">
+            {post.comments.length === 0 ? (
+              <div className="text-center py-8 border border-main-color/20 rounded-lg">
+                <MessageCircle className="w-12 h-12 mx-auto text-main-color/30 mb-4" />
+                <p className="text-light-color">
+                  No comments yet. Be the first to share your thoughts!
+                </p>
+              </div>
+            ) : (
+              post.comments.map((comment) => (
+                <div key={comment._id} className="flex gap-4">
+                  <img
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.user._id}`}
+                    alt={comment.user.username}
+                    className="w-10 h-10 rounded-full flex-shrink-0"
+                  />
+                  <div className="flex-1 bg-white rounded-lg p-4 border border-main-color/10">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="font-medium text-text-color">
+                          {comment.user.username}
+                        </span>
+                        <span className="text-light-color text-sm ml-2">
+                          {formatDistanceToNow(new Date(comment.createdAt), {
+                            addSuffix: true,
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-text-color whitespace-pre-line">
+                      {comment.content}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </article>
