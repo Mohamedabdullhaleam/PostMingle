@@ -14,7 +14,9 @@ export class CreatePostDto {
 
   @IsNotEmpty({ message: 'Content is required' })
   @IsString()
-  @Length(10, 500, { message: 'Content must be between 10 and 500 characters' })
+  @Length(10, 5000, {
+    message: 'Content must be between 10 and 500 characters',
+  })
   content: string;
 
   @IsOptional()

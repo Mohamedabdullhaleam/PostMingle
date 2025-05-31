@@ -14,6 +14,8 @@ import {
   Zap,
   LogIn,
   ShieldOff,
+  PlaneTakeoff,
+  Brain,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -209,7 +211,7 @@ const Register = () => {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 bg-sec-color hover:bg-btn-color text-white font-semibold rounded-lg transition-colors"
+                  className="w-full h-12 bg-sec-color hover:bg-btn-color text-white font-semibold rounded-lg transition-colors cursor-pointer"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -264,20 +266,21 @@ const Register = () => {
 
           <div className="grid grid-cols-1 gap-6">
             <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
-              <Zap className="w-8 h-8 text-flag-color" />
+              <PlaneTakeoff className="w-8 h-8 text-flag-color" />
               <div>
-                <h3 className="font-semibold">Quick Setup</h3>
+                <h3 className="font-semibold">See Other opinions</h3>
                 <p className="text-sm text-white/80">
-                  Get started in under 2 minutes
+                  See the world in new ways and broaden your perspective.
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
-              <Shield className="w-8 h-8 text-flag-color" />
+              <Brain className="w-8 h-8 text-flag-color" />
               <div>
-                <h3 className="font-semibold">Secure Platform</h3>
+                <h3 className="font-semibold">Your opinion</h3>
                 <p className="text-sm text-white/80">
-                  Your data is safe with us
+                  You can share your unique thoughts, and experiences with our
+                  community.
                 </p>
               </div>
             </div>

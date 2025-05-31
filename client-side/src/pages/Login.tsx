@@ -12,37 +12,46 @@ import {
   Users,
   Sparkles,
   ArrowRight,
+  ShieldOff,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
+
+const LoginSchema = Yup.object().shape({
+  email: Yup.string()
+    .email("Invalid email address")
+    .required("Email is required"),
+  password: Yup.string()
+    .min(6, "Password must be at least 6 characters")
+    .required("Password is required"),
+});
 
 const Login = () => {
   const navigate = useNavigate();
   const { login, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = async (values: any) => {
     try {
-      await login(formData.email, formData.password);
+      await login(values.email, values.password);
       toast.success("Welcome back!");
       navigate("/");
     } catch (error: any) {
-      toast.error(
-        error.message || "Login failed. Please check your credentials."
-      );
-    }
-  };
+      const msg = error.message?.toLowerCase() || "";
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+      if (msg.includes("credentials")) {
+        toast.error("Invalid credentials. Please try again.", {
+          icon: <ShieldOff className="text-red-500 w-5 h-5" />,
+          action: {
+            label: "Reset Password",
+            onClick: () => navigate("/reset-password"),
+          },
+        });
+      } else {
+        toast.error(error.message || "Login failed. Please try again.");
+      }
+    }
   };
 
   return (
@@ -55,9 +64,9 @@ const Login = () => {
       </div>
 
       {/* Left Side - Hero Section */}
-      <div className="hidden lg:flex lg:w-1/2 text-white p-12 flex-col justify-center relative z-10">
+      <div className="hidden lg:flex lg:w-1/2 text-white p-14 flex-col justify-center relative z-10">
         <div className="max-w-lg">
-          <div className="mb-8">
+          <div className="mb-5 pl-16">
             <div className="flex items-center mb-6">
               <div className="w-12 h-12 bg-flag-color rounded-xl flex items-center justify-center mr-4">
                 <BookOpen className="w-6 h-6 text-white" />
@@ -71,44 +80,6 @@ const Login = () => {
               Continue your journey of sharing stories, connecting with readers,
               and building your digital presence in our vibrant community.
             </p>
-          </div>
-
-          <div className="space-y-6">
-            <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 hover:bg-white/15 transition-all duration-300">
-              <div className="w-12 h-12 bg-flag-color/20 rounded-xl flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-flag-color" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">Rich Content Creation</h3>
-                <p className="text-sm text-white/80">
-                  Create beautiful posts with images and rich formatting
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 hover:bg-white/15 transition-all duration-300">
-              <div className="w-12 h-12 bg-flag-color/20 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-flag-color" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">Vibrant Community</h3>
-                <p className="text-sm text-white/80">
-                  Connect with fellow writers and passionate readers
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 hover:bg-white/15 transition-all duration-300">
-              <div className="w-12 h-12 bg-flag-color/20 rounded-xl flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-flag-color" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">Easy Publishing</h3>
-                <p className="text-sm text-white/80">
-                  Share your thoughts effortlessly with our intuitive editor
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -129,94 +100,129 @@ const Login = () => {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-text-color font-medium">
-                  Email Address
-                </Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  className="h-12 border-2 border-light-color/20 focus:border-main-color rounded-xl bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-main-color/50"
-                  placeholder="Enter your email address"
-                />
-              </div>
+            <Formik
+              initialValues={{ email: "", password: "" }}
+              validationSchema={LoginSchema}
+              onSubmit={handleSubmit}
+            >
+              {({ isSubmitting, errors, touched }) => (
+                <Form className="space-y-6">
+                  {/* Email Field */}
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="email"
+                      className="text-text-color font-medium"
+                    >
+                      Email Address
+                    </Label>
+                    <Field
+                      as={Input}
+                      id="email"
+                      name="email"
+                      type="email"
+                      className={`h-12 border-2 ${
+                        errors.email && touched.email
+                          ? "border-red-500"
+                          : "border-light-color/20 focus:border-main-color"
+                      } rounded-xl bg-white/80 backdrop-blur-sm transition-all duration-300`}
+                      placeholder="Enter your email address"
+                    />
+                    <ErrorMessage
+                      name="email"
+                      component="div"
+                      className="text-red-500 text-sm mt-1"
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label
-                  htmlFor="password"
-                  className="text-text-color font-medium"
-                >
-                  Password
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    required
-                    className="h-12 border-2 border-light-color/20 focus:border-main-color rounded-xl pr-12 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:border-main-color/50"
-                    placeholder="Enter your password"
-                  />
+                  {/* Password Field */}
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="password"
+                      className="text-text-color font-medium"
+                    >
+                      Password
+                    </Label>
+                    <div className="relative">
+                      <Field
+                        as={Input}
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        className={`h-12 border-2 ${
+                          errors.password && touched.password
+                            ? "border-red-500"
+                            : "border-light-color/20 focus:border-main-color"
+                        } rounded-xl pr-12 bg-white/80 backdrop-blur-sm transition-all duration-300`}
+                        placeholder="Enter your password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-12 px-3 hover:bg-transparent rounded-xl cursor-pointer"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5 text-light-color" />
+                        ) : (
+                          <Eye className="w-5 h-5 text-light-color" />
+                        )}
+                      </Button>
+                    </div>
+                    <ErrorMessage
+                      name="password"
+                      component="div"
+                      className="text-red-500 text-sm mt-1"
+                    />
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Link
+                      to="/forgot-password"
+                      className="text-sec-color hover:text-btn-color text-sm font-medium transition-colors"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+
                   <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-12 px-3 hover:bg-transparent rounded-xl cursor-pointer"
-                    onClick={() => setShowPassword(!showPassword)}
+                    type="submit"
+                    className="w-full h-12 bg-gradient-to-r from-btn-color to-sec-color hover:from-sec-color hover:to-btn-color text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] group cursor-pointer"
+                    disabled={isLoading || isSubmitting}
                   >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5 text-light-color" />
+                    {isLoading || isSubmitting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Signing In...
+                      </>
                     ) : (
-                      <Eye className="w-5 h-5 text-light-color" />
+                      <>Sign In</>
                     )}
                   </Button>
-                </div>
-              </div>
 
-              <Button
-                type="submit"
-                className="w-full cursor-pointer h-12 bg-gradient-to-r from-btn-color to-sec-color hover:from-sec-color hover:to-btn-color text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] group"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2" />
-                    Signing In...
-                  </>
-                ) : (
-                  <>
-                    Sign In
-                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </Button>
+                  <div className="text-center space-y-4">
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-light-color/30"></div>
+                      </div>
+                      <div className="relative flex justify-center text-sm">
+                        <span className="px-4 bg-white text-light-color font-medium">
+                          Don't have an account?
+                        </span>
+                      </div>
+                    </div>
 
-              <div className="text-center space-y-4">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-light-color/30"></div>
+                    <Link
+                      to="/register"
+                      className="w-full h-12 border-2 border-main-color text-main-color hover:bg-main-color hover:text-white font-semibold rounded-xl transition-all duration-300 flex items-center justify-center group hover:shadow-lg"
+                    >
+                      Create Account
+                      <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Link>
                   </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white text-light-color font-medium">
-                      Don't have an account?
-                    </span>
-                  </div>
-                </div>
-                <Link
-                  to="/register"
-                  className="w-full cursor-pointer h-12 border-2 border-main-color text-main-color hover:bg-main-color hover:text-white font-semibold rounded-xl transition-all duration-300 flex items-center justify-center group hover:shadow-lg"
-                >
-                  Create Account
-                </Link>
-              </div>
-            </form>
+                </Form>
+              )}
+            </Formik>
           </div>
         </div>
       </div>

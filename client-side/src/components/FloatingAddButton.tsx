@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "../contexts/AuthContext";
 import CreatePostModal from "./CreatePostModal";
+import { toast } from "sonner";
 
 const FloatingAddButton = () => {
   const { user } = useAuth();
@@ -14,7 +15,7 @@ const FloatingAddButton = () => {
     if (user) {
       setShowCreateModal(true);
     } else {
-      navigate("/login");
+      toast.error("You need to be logged in to add a posts.");
     }
   };
 
@@ -22,7 +23,7 @@ const FloatingAddButton = () => {
     <>
       <Button
         onClick={handleClick}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-flag-color hover:bg-flag-color/90 shadow-lg hover:shadow-xl transition-all duration-300 z-50 flex items-center justify-center group"
+        className="fixed bottom-6 cursor-pointer right-6 w-14 h-14 rounded-full bg-flag-color hover:bg-flag-color/90 shadow-lg hover:shadow-xl transition-all duration-300 z-50 flex items-center justify-center group"
         size="icon"
       >
         <Plus className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />

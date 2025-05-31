@@ -6,13 +6,6 @@ import { Home, ArrowLeft, Search, BookOpen } from "lucide-react";
 const NotFound = () => {
   const location = useLocation();
 
-  useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
-  }, [location.pathname]);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-light-green via-white to-main-color/10 flex items-center justify-center px-6">
       <div className="max-w-4xl mx-auto text-center">
@@ -42,14 +35,6 @@ const NotFound = () => {
             digital wilderness. Don't worry, even the best explorers sometimes
             take a wrong turn!
           </p>
-          {location.pathname !== "/" && (
-            <p className="text-sm text-light-color/80 mt-2 italic">
-              Path attempted:{" "}
-              <code className="bg-main-color/10 px-2 py-1 rounded">
-                {location.pathname}
-              </code>
-            </p>
-          )}
         </div>
 
         {/* Floating Elements */}
