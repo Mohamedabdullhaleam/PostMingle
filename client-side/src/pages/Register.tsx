@@ -14,6 +14,8 @@ import {
   Zap,
   LogIn,
   ShieldOff,
+  PlaneTakeoff,
+  Brain,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -260,6 +262,37 @@ const Register = () => {
               Join thousands of writers sharing their thoughts, experiences, and
               expertise with the world.
             </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6">
+            <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
+              <PlaneTakeoff className="w-8 h-8 text-flag-color" />
+              <div>
+                <h3 className="font-semibold">See Other opinions</h3>
+                <p className="text-sm text-white/80">
+                  See the world in new ways and broaden your perspective.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
+              <Brain className="w-8 h-8 text-flag-color" />
+              <div>
+                <h3 className="font-semibold">Your opinion</h3>
+                <p className="text-sm text-white/80">
+                  You can share your unique thoughts, and experiences with our
+                  community.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
+              <BookOpen className="w-8 h-8 text-flag-color" />
+              <div>
+                <h3 className="font-semibold">Rich Editor</h3>
+                <p className="text-sm text-white/80">
+                  Beautiful posts with media support
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
